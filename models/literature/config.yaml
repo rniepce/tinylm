@@ -1,0 +1,15 @@
+# Literature Specialist — MLX LoRA Config
+model: "mlx-community/Mistral-7B-Instruct-v0.3-4bit"
+adapter_path: "adapters/literature"
+data: "models/literature/data"
+train: true
+iters: 600
+batch_size: 1
+lora_layers: 16
+lora_rank: 8
+learning_rate: 1e-5
+steps_per_eval: 100
+val_batches: 2
+grad_checkpoint: true
+max_seq_length: 2048
+seed: 42

@@ -1,0 +1,4 @@
+mlx>=0.21.0
+mlx-lm>=0.21.0
+fastapi
+uvicorn

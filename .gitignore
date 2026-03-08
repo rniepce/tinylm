@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# MLX adapters (large files)
+adapters/
+
+# OS
+.DS_Store
+
+# HuggingFace cache
+.cache/
+
+# tinyLM checkpoints (large)
+tinylm/checkpoints/
+tinylm/tokenizer_output/

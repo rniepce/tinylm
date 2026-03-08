@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tinyLM-pt Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a2e;
+            --bg-card: #16162a;
+            --surface-elevated: #1e1e36;
+            --border-color: rgba(255, 255, 255, 0.06);
+            --border-glow: rgba(99, 102, 241, 0.3);
+            --text-primary: #e8e8f0;
+            --text-secondary: #8b8ba0;
+            --text-muted: #5a5a72;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --green-accent: #10b981;
+            --green-glow: rgba(16, 185, 129, 0.15);
+            --user-bubble: linear-gradient(135deg, #6366f1, #4f46e5);
+            --bot-bubble: #1e1e36;
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── Header ──────────────────────────────────────────────── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--user-bubble);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3); }
+            50% { box-shadow: 0 4px 30px rgba(99, 102, 241, 0.5); }
+        }
+
+        .header-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-title h1 {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .header-title span {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 100px;
+            background: var(--green-glow);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--green-accent);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green-accent);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ── Chat Area ───────────────────────────────────────────── */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+            background: var(--text-muted);
+            border-radius: 3px;
+        }
+
+        .messages {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ── Welcome Card ────────────────────────────────────────── */
+        .welcome {
+            text-align: center;
+            padding: 60px 20px 40px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .welcome-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 20px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--accent-primary), #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 8px 40px rgba(99, 102, 241, 0.3);
+        }
+
+        .welcome h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.03em;
+        }
+
+        .welcome p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            max-width: 480px;
+            margin: 0 auto 28px;
+            line-height: 1.6;
+        }
+
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .suggestion {
+            padding: 10px 18px;
+            border-radius: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .suggestion:hover {
+            background: var(--surface-elevated);
+            border-color: var(--border-glow);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+
+        /* ── Message Bubbles ─────────────────────────────────────── */
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: fadeInUp 0.35s ease-out;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .message.bot .avatar {
+            background: linear-gradient(135deg, var(--accent-primary), #8b5cf6);
+            box-shadow: 0 2px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .message.user .avatar {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .bubble {
+            max-width: 680px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.65;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.user .bubble {
+            background: var(--user-bubble);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .bubble {
+            background: var(--bot-bubble);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 4px;
+            color: var(--text-primary);
+        }
+
+        .bubble .meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── Typing indicator ────────────────────────────────────── */
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 8px 4px;
+        }
+
+        .typing-indicator span {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-secondary);
+            animation: typing 1.4s ease-in-out infinite;
+        }
+
+        .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; transform: scale(0.85); }
+            30% { opacity: 1; transform: scale(1); }
+        }
+
+        /* ── Input Area ──────────────────────────────────────────── */
+        .input-area {
+            padding: 16px 24px 24px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .input-box {
+            flex: 1;
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            min-height: 48px;
+            max-height: 160px;
+            line-height: 1.5;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        textarea:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            border: none;
+            background: var(--user-bubble);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* ── Settings panel ──────────────────────────────────────── */
+        .settings-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 8px 10px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .settings-toggle:hover {
+            border-color: var(--border-glow);
+            color: var(--text-primary);
+        }
+
+        .settings-panel {
+            display: none;
+            max-width: 800px;
+            margin: 0 auto 12px;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            animation: fadeInUp 0.2s ease-out;
+        }
+
+        .settings-panel.open {
+            display: block;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .setting-item label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .setting-item input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-primary);
+        }
+
+        .setting-value {
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-secondary);
+            float: right;
+            margin-top: -18px;
+        }
+
+        /* ── Footer info ─────────────────────────────────────────── */
+        .footer-info {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding-top: 10px;
+        }
+
+        .footer-info a {
+            color: var(--accent-secondary);
+            text-decoration: none;
+        }
+
+        /* ── Model info chip ─────────────────────────────────────── */
+        .model-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+            background: var(--bg-primary);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 640px) {
+            .header { padding: 12px 16px; }
+            .chat-container { padding: 16px; }
+            .input-area { padding: 12px 16px 16px; }
+            .welcome { padding: 40px 16px 24px; }
+            .suggestions { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <div class="header-left">
+        <div class="logo">🧠</div>
+        <div class="header-title">
+            <h1>tinyLM-pt</h1>
+            <span id="model-info">Carregando modelo...</span>
+        </div>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            Online
+        </div>
+        <button class="settings-toggle" onclick="toggleSettings()" title="Configurações">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
+    </div>
+</div>
+
+<!-- Chat -->
+<div class="chat-container" id="chat-container">
+    <div class="messages" id="messages">
+        <!-- Welcome -->
+        <div class="welcome" id="welcome">
+            <div class="welcome-icon">🇧🇷</div>
+            <h2>Olá! Eu sou a tinyLM-pt</h2>
+            <p>Um modelo de linguagem com ~30M parâmetros treinado em português. Escreva algo para eu continuar!</p>
+            <div class="suggestions">
+                <button class="suggestion" onclick="useSuggestion('O Brasil é o maior país')">🌎 O Brasil é o maior país</button>
+                <button class="suggestion" onclick="useSuggestion('A culinária brasileira é')">🍽️ A culinária brasileira é</button>
+                <button class="suggestion" onclick="useSuggestion('O samba nasceu')">🎵 O samba nasceu</button>
+                <button class="suggestion" onclick="useSuggestion('A floresta amazônica')">🌿 A floresta amazônica</button>
+                <button class="suggestion" onclick="useSuggestion('Machado de Assis')">📚 Machado de Assis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Input -->
+<div class="input-area">
+    <div class="settings-panel" id="settings-panel">
+        <div class="settings-grid">
+            <div class="setting-item">
+                <label>Temperature <span class="setting-value" id="temp-val">0.8</span></label>
+                <input type="range" min="0.1" max="2" step="0.1" value="0.8" id="temperature"
+                       oninput="document.getElementById('temp-val').textContent=this.value">
+            </div>
+            <div class="setting-item">
+                <label>Top-K <span class="setting-value" id="topk-val">50</span></label>
+                <input type="range" min="1" max="200" step="1" value="50" id="top_k"
+                       oninput="document.getElementById('topk-val').textContent=this.value">
+            </div>
+            <div class="setting-item">
+                <label>Top-P <span class="setting-value" id="topp-val">0.9</span></label>
+                <input type="range" min="0.1" max="1" step="0.05" value="0.9" id="top_p"
+                       oninput="document.getElementById('topp-val').textContent=this.value">
+            </div>
+            <div class="setting-item">
+                <label>Max Tokens <span class="setting-value" id="maxt-val">200</span></label>
+                <input type="range" min="20" max="500" step="10" value="200" id="max_tokens"
+                       oninput="document.getElementById('maxt-val').textContent=this.value">
+            </div>
+        </div>
+    </div>
+    <div class="input-wrapper">
+        <div class="input-box">
+            <textarea id="user-input" placeholder="Escreva um texto para a tinyLM continuar..." rows="1"
+                      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        </div>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+        </button>
+    </div>
+    <div class="footer-info">
+        tinyLM-pt • 29.5M params • PyTorch + RoPE + RMSNorm + SwiGLU •
+        <a href="https://github.com/rniepce/tinylm" target="_blank">GitHub</a>
+    </div>
+</div>
+
+<script>
+    const messagesEl = document.getElementById('messages');
+    const chatContainer = document.getElementById('chat-container');
+    const inputEl = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    let isGenerating = false;
+
+    // Load model info
+    fetch('/api/info')
+        .then(r => r.json())
+        .then(info => {
+            document.getElementById('model-info').textContent =
+                `${info.params} params • ${info.n_layers}L/${info.n_heads}H • ${info.device.toUpperCase()}`;
+        })
+        .catch(() => {
+            document.getElementById('model-info').textContent = '29.5M params • 8L/8H';
+        });
+
+    function toggleSettings() {
+        document.getElementById('settings-panel').classList.toggle('open');
+    }
+
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+    }
+
+    function handleKey(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    }
+
+    function useSuggestion(text) {
+        inputEl.value = text;
+        autoResize(inputEl);
+        sendMessage();
+    }
+
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function addMessage(role, content, meta = null) {
+        // Hide welcome on first message
+        const welcome = document.getElementById('welcome');
+        if (welcome) welcome.style.display = 'none';
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${role}`;
+
+        const avatarLabel = role === 'user' ? '👤' : '🧠';
+        let metaHTML = '';
+        if (meta) {
+            metaHTML = `<div class="meta">${meta}</div>`;
+        }
+
+        msgDiv.innerHTML = `
+            <div class="avatar">${avatarLabel}</div>
+            <div class="bubble">${escapeHtml(content)}${metaHTML}</div>
+        `;
+        messagesEl.appendChild(msgDiv);
+        scrollToBottom();
+        return msgDiv;
+    }
+
+    function addTypingIndicator() {
+        const welcome = document.getElementById('welcome');
+        if (welcome) welcome.style.display = 'none';
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message bot';
+        msgDiv.id = 'typing';
+        msgDiv.innerHTML = `
+            <div class="avatar">🧠</div>
+            <div class="bubble">
+                <div class="typing-indicator">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        `;
+        messagesEl.appendChild(msgDiv);
+        scrollToBottom();
+    }
+
+    function removeTypingIndicator() {
+        const el = document.getElementById('typing');
+        if (el) el.remove();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    async function sendMessage() {
+        const prompt = inputEl.value.trim();
+        if (!prompt || isGenerating) return;
+
+        isGenerating = true;
+        sendBtn.disabled = true;
+
+        // Add user message
+        addMessage('user', prompt);
+        inputEl.value = '';
+        inputEl.style.height = 'auto';
+
+        // Show typing indicator
+        addTypingIndicator();
+
+        const params = {
+            prompt: prompt,
+            max_tokens: parseInt(document.getElementById('max_tokens').value),
+            temperature: parseFloat(document.getElementById('temperature').value),
+            top_k: parseInt(document.getElementById('top_k').value),
+            top_p: parseFloat(document.getElementById('top_p').value),
+        };
+
+        const t0 = performance.now();
+
+        try {
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params),
+            });
+
+            const data = await res.json();
+            const dt = ((performance.now() - t0) / 1000).toFixed(1);
+            removeTypingIndicator();
+
+            const outputText = data.text || '(sem resposta)';
+            addMessage('bot', outputText, `⚡ ${dt}s • temp=${params.temperature} • top_k=${params.top_k}`);
+
+        } catch (err) {
+            removeTypingIndicator();
+            addMessage('bot', `❌ Erro: ${err.message}`);
+        }
+
+        isGenerating = false;
+        sendBtn.disabled = false;
+        inputEl.focus();
+    }
+
+    // Focus input on load
+    inputEl.focus();
+</script>
+</body>
+</html>
